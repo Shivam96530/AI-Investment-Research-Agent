@@ -1,0 +1,87 @@
+/* General Sans from Fontshare — bold geometric sans for Swiss brutalist look */
+@import url("https://api.fontshare.com/v2/css?f[]=general-sans@200,300,400,500,600,700,800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: #fafafa;
+  color: #0a0a0a;
+  font-family: "General Sans", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss01";
+}
+
+/* Strict monochrome selection */
+::selection {
+  background: #0a0a0a;
+  color: #ffffff;
+}
+
+/* Pros prefix: + in invest green */
+.pro-item::before {
+  content: "+";
+  color: #047857;
+  font-weight: 900;
+  font-size: 1.25rem;
+  line-height: 1.4;
+  padding-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Cons prefix: − in pass red */
+.con-item::before {
+  content: "\2212";
+  color: #e11d48;
+  font-weight: 900;
+  font-size: 1.25rem;
+  line-height: 1.4;
+  padding-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Brutalist spinner: rotating filled square */
+@keyframes brutal-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.brutal-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  background: currentColor;
+  animation: brutal-spin 0.9s linear infinite;
+  flex-shrink: 0;
+}
+
+/* Staggered fade-up for result grid entrance */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-up {
+  animation: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Cell stagger delays */
+.fade-up-1 { animation-delay: 0.05s; }
+.fade-up-2 { animation-delay: 0.12s; }
+.fade-up-3 { animation-delay: 0.19s; }
+.fade-up-4 { animation-delay: 0.26s; }
