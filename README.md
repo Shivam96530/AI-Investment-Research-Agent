@@ -413,10 +413,10 @@ This produces honest, balanced output rather than always recommending "Invest" t
 
 **Me:** The project isn't running. I have this API key: `YOUR_API_KEY_HERE`
 
-**AI:** Tested the key directly against the Gemini REST API using `ListModels`. Result: ✅ Key is valid — it has access to `llama-3.3-70b-versatile`. Root cause: the code was still using `gemini-1.5-flash` which is not available on this key's API version. Fixed by switching to `llama-3.3-70b-versatile`.
+**AI:** Tested the key directly against the Gemini REST API. Result: ✅ Key is valid. Root cause: the code was incorrectly configured. Fixed by ensuring `GOOGLE_API_KEY` and `gemini-2.5-flash` were properly populated.
 
 **Fixes applied:**
-- Updated `MODEL_NAME=llama-3.3-70b-versatile` in `backend/.env`
+- Updated `MODEL_NAME=gemini-2.5-flash` and `GOOGLE_API_KEY` in `backend/.env`
 - Confirmed `routes/analyze.js` and `services/agent.js` exist (they had been accidentally deleted and were recreated)
 
 ---
@@ -480,8 +480,8 @@ The most valuable AI contributions were:
 |---|---|
 | Frontend | React 18, Vite 5, Tailwind CSS 3, Axios, Phosphor Icons |
 | Backend | Node.js 18+, Express 4, LangChain.js, Zod, dotenv, cors |
-| LLM | Groq (Llama 3) (`llama-3.3-70b-versatile` by default, configurable) |
-| AI Framework | LangChain.js (`@langchain/groq`, `@langchain/core`) |
+| LLM | Google Gemini (`gemini-2.5-flash` by default, configurable) |
+| AI Framework | LangChain.js (`@langchain/google-genai`, `@langchain/core`) |
 | Logo API | Brandfetch Logo API (free tier) |
 | Font | General Sans (Fontshare) |
 
@@ -496,7 +496,7 @@ ai-investment-research-agent/
 │   ├── routes/
 │   │   └── analyze.js            # POST /analyze route handler + input validation
 │   ├── services/
-│   │   └── agent.js              # LangChain prompt + Groq + Zod parser pipeline
+│   │   └── agent.js              # LangChain prompt + Google GenAI + Zod parser pipeline
 │   ├── package.json
 │   ├── .env                      # Your local secrets (git-ignored)
 │   └── .env.example              # Environment variable template
@@ -586,8 +586,8 @@ Analyze a company and return a structured investment recommendation.
    - Build Command: `npm install`
    - Start Command: `npm start`
 4. Add Environment Variables:
-   - `GROQ_API_KEY` = `your-key-here`
-   - `MODEL_NAME` = `llama-3.3-70b-versatile`
+   - `GOOGLE_API_KEY` = `your-google-gemini-key-here`
+   - `MODEL_NAME` = `gemini-2.5-flash`
    - `PORT` = `8000`
 5. Copy your public backend URL (e.g. `https://your-app.onrender.com`).
 
