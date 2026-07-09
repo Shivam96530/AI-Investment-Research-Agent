@@ -451,6 +451,18 @@ Full pipeline confirmed: React → Vite proxy → Express → LangChain → Groq
 
 ---
 
+### Session 8 — Logo Fallbacks, Financial Estimates & 500 Error Fixes
+
+**Me:** I am getting a 500 error after deploying to Vercel and Render. Also, financial metrics shouldn't always show "Not Publicly Available". Lastly, the logo API fails for some companies, can you fix this to use high-quality logos from robust multi-providers?
+
+**AI:** Fixed all three issues to ensure production health and data accuracy:
+- **500 Error Fix**: Loosened strict Zod enums (like `risk`, `analystConsensus`) to standard strings. Previously, if the AI hallucinated slightly, Zod would throw a parsing error causing a 500 crash on the backend.
+- **Financial Estimates**: Updated the AI prompt instructions and Zod schema descriptions to explicitly request realistic estimates (marked with `(Est.)`) instead of returning "Not Publicly Available". Forced exhaustive searches rather than relying on pre-training.
+- **Robust Logo Fallback**: Replaced the single Brandfetch logo API with a progressive fallback array. The frontend now sequentially requests high-resolution logos from Clearbit (size=512) -> Brandfetch -> Google Favicons (sz=256), seamlessly catching loading errors.
+- **Clean up**: Uninstalled the unused `recharts` dependency from the frontend since RadarCharts are implemented in pure SVG.
+
+---
+
 ### Key Insights From the AI-Assisted Build
 
 The most valuable AI contributions were:

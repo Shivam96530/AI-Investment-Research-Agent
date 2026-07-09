@@ -191,15 +191,16 @@ export default function App() {
   const [loading, setLoading]   = useState(false);
   const [result,  setResult]    = useState(null);
   const [error,   setError]     = useState("");
-  const [logoUrl, setLogoUrl]   = useState("");
+  const [logoUrls, setLogoUrls] = useState([]);
+  const [logoIndex, setLogoIndex] = useState(0);
   const [logoOk,  setLogoOk]    = useState(false);
 
-  function getLogoUrl(data, fallbackName) {
+  function getLogoUrls(data, fallbackName) {
     const clientId = import.meta.env.VITE_BRANDFETCH_CLIENT_ID || "1idC_Y-W_P";
     let domain = "";
     
     // 1. Try to use the exact website provided by the AI
-    if (data?.website && data.website !== "No Official Website Found" && data.website !== "Not Publicly Available") {
+    if (data?.website && data.website !== "No Official Website Found" && data.website !== "Not Publicly Available" && data.website !== "N/A") {
       try {
         let urlStr = data.website;
         if (!urlStr.startsWith("http")) urlStr = "https://" + urlStr;
@@ -219,7 +220,12 @@ export default function App() {
         .replace(/(inc|ltd|llc|corp|co|plc|group)$/, "") + ".com";
     }
     
-    return `https://cdn.brandfetch.io/${domain}?c=${clientId}`;
+    // Try multiple logo providers with explicit high-quality size parameters
+    return [
+      `https://logo.clearbit.com/${domain}?size=512`,
+      `https://cdn.brandfetch.io/${domain}?c=${clientId}`,
+      `https://www.google.com/s2/favicons?domain=${domain}&sz=256`
+    ];
   }
 
   async function handleAnalyze(e) {
@@ -238,8 +244,9 @@ export default function App() {
         { timeout: 120000 }
       );
       
-      const url = getLogoUrl(data, company);
-      setLogoUrl(url);
+      const urls = getLogoUrls(data, company);
+      setLogoUrls(urls);
+      setLogoIndex(0);
       setLogoOk(false);
       setResult(data);
     } catch (err) {
@@ -339,13 +346,16 @@ export default function App() {
               <div className="col-span-1 md:col-span-3 border-r border-border p-6 md:p-8">
                 <Overline className="text-neutral-400 mb-2">Company</Overline>
                 <div className="flex items-center gap-4 mb-3">
-                  {logoUrl && (
+                  {logoUrls.length > 0 && logoIndex < logoUrls.length && (
                     <img
-                      src={logoUrl}
+                      src={logoUrls[logoIndex]}
                       alt={`${result.company} logo`}
                       data-testid="company-logo"
                       onLoad={() => setLogoOk(true)}
-                      onError={() => setLogoOk(false)}
+                      onError={() => {
+                        setLogoOk(false);
+                        setLogoIndex((prev) => prev + 1);
+                      }}
                       className={`w-12 h-12 md:w-16 md:h-16 object-contain border border-border bg-white p-1 flex-shrink-0 transition-opacity duration-300 ${
                         logoOk ? "opacity-100" : "opacity-0 w-0 h-0 p-0 border-0"
                       }`}

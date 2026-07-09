@@ -9,21 +9,21 @@ import { z } from "zod";
 // 1. Zod schema — defines the exact shape of the AI's JSON response
 const investmentSchema = z.object({
   company: z.string().describe("Full official name of the company being analyzed. Keep exactly as provided."),
-  ticker: z.string().describe("Stock ticker symbol if publicly traded. If private or unknown, state 'Not Publicly Available'."),
+  ticker: z.string().describe("Stock ticker symbol if publicly traded. If private or unknown, state 'N/A'."),
   sector: z.string().describe("Industry sector (e.g. Technology, Healthcare, Energy)."),
-  founded: z.string().describe("Year the company was founded. If unknown, state 'Not Publicly Available'."),
+  founded: z.string().describe("Year the company was founded. If unknown, state 'N/A'."),
   headquarters: z.string().describe("City and country of headquarters. Always distinguish between Headquarters, Registered Office, Branch Office, and Manufacturing Plant."),
-  ceo: z.string().describe("Name and title of the highest executive (e.g., CEO, Managing Director, Founder, President). Return whichever title actually exists. Do not force 'CEO'. If unknown, state 'Not Publicly Available'."),
-  employees: z.string().describe("Approximate number of employees. If unavailable, state 'Not Publicly Available'."),
-  marketCap: z.string().describe("Approximate market capitalization. If unavailable or private, state 'Not Publicly Available'."),
-  revenue: z.string().describe("Latest annual revenue. If unavailable, state 'Not Publicly Available'."),
-  revenueGrowth: z.string().describe("Year-over-year revenue growth percentage. If unavailable, state 'Not Publicly Available'."),
-  netMargin: z.string().describe("Net profit margin as percentage. If unavailable, state 'Not Publicly Available'."),
-  peRatio: z.string().describe("Price-to-earnings ratio. If unavailable, state 'Not Publicly Available'."),
-  debtToEquity: z.string().describe("Debt-to-equity ratio. If unavailable, state 'Not Publicly Available'."),
-  dividendYield: z.string().describe("Dividend yield if applicable. If unavailable, state 'Not Publicly Available'."),
+  ceo: z.string().describe("Name and title of the highest executive (e.g., CEO, Managing Director, Founder, President). Return whichever title actually exists. Do not force 'CEO'. If unknown, state 'N/A'."),
+  employees: z.string().describe("Approximate number of employees. If unavailable, provide an estimate based on industry averages and append '(Est.)'."),
+  marketCap: z.string().describe("Approximate market capitalization. If unavailable or private, provide an estimate based on industry averages and append '(Est.)'."),
+  revenue: z.string().describe("Latest annual revenue. If unavailable, provide an estimate based on industry averages and append '(Est.)'."),
+  revenueGrowth: z.string().describe("Year-over-year revenue growth percentage. If unavailable, provide an estimate based on industry averages and append '(Est.)'."),
+  netMargin: z.string().describe("Net profit margin as percentage. If unavailable, provide an estimate based on industry averages and append '(Est.)'."),
+  peRatio: z.string().describe("Price-to-earnings ratio. If unavailable, provide an estimate based on industry averages and append '(Est.)'."),
+  debtToEquity: z.string().describe("Debt-to-equity ratio. If unavailable, provide an estimate based on industry averages and append '(Est.)'."),
+  dividendYield: z.string().describe("Dividend yield if applicable. If unavailable, provide an estimate based on industry averages and append '(Est.)'."),
   website: z.string().describe("Official company website. If the company has no website, state 'No Official Website Found'."),
-  socialMedia: z.string().describe("Official social media links. Do not invent social media links. If unavailable, state 'Not Publicly Available'."),
+  socialMedia: z.string().describe("Official social media links. Do not invent social media links. If unavailable, state 'N/A'."),
   recommendation: z
     .enum(["Invest", "Pass"])
     .describe("Final investment decision."),
@@ -35,7 +35,7 @@ const investmentSchema = z.object({
     .array(z.string())
     .min(1)
     .describe("Between 3 and 6 concise weaknesses with specific data points where possible."),
-  risk: z.enum(["Low", "Medium", "High"]).describe("Overall risk level."),
+  risk: z.string().describe("Overall risk level. Preferably Low, Medium, or High."),
   reason: z
     .string()
     .describe(
@@ -68,10 +68,10 @@ const investmentSchema = z.object({
     .array(z.string())
     .min(1)
     .describe("2-4 specific material risks with context."),
-  analystConsensus: z.enum(["Strong Buy", "Buy", "Hold", "Sell", "Strong Sell", "N/A"]).optional()
-    .describe("Approximate analyst consensus rating if publicly traded. Use 'N/A' if unknown."),
-  investmentHorizon: z.enum(["Short-term (<1yr)", "Medium-term (1-3yr)", "Long-term (3yr+)", "N/A"])
-    .describe("Best investment horizon for this company. Use 'N/A' if unknown."),
+  analystConsensus: z.string().optional()
+    .describe("Approximate analyst consensus rating if publicly traded (e.g. Strong Buy, Buy, Hold). Use 'N/A' if unknown."),
+  investmentHorizon: z.string()
+    .describe("Best investment horizon for this company (e.g., Short-term (<1yr), Medium-term (1-3yr), Long-term (3yr+)). Use 'N/A' if unknown."),
 });
 
 // 2. Parser wraps the schema so LangChain can inject format instructions into the prompt
@@ -85,31 +85,27 @@ COMPANY: {company}
 CURRENT YEAR: 2026
 
 IMPORTANT INSTRUCTION: Use your native Google Search Grounding to deeply search for this company right now. You MUST fetch the absolute latest data available up to 2026. Do NOT rely on outdated 2023/2024 figures if newer 2025/2026 figures exist.
+CRITICAL CAPABILITY: You are a meticulous research agent. You MUST perform exhaustive internet searches to gather exact financial data. Do not rely on your pre-training data. Verify each financial metric and ensure every figure is backed by recent search results. Do not be lazy.
 
 STRICT RESEARCH RULES:
 1. Search globally, not only well-known companies.
-2. Never assume information.
-3. Never fabricate, estimate, infer, or replace missing information.
-4. If a field cannot be verified from reliable sources, return: "Not Publicly Available"
-5. If multiple sources disagree, prefer: Official company website, Government/business registry, Official LinkedIn page, Stock exchange filings, Company press releases, Trusted business databases.
-6. Do NOT replace missing data with similar data.
-7. Keep company names exactly as provided.
-8. If the company is private and limited information exists, report only verified facts.
-9. Recognize different executive titles (e.g., CEO, Managing Director, Founder, President). Return whichever title actually exists. Never force "CEO" if the company does not have one.
-10. If multiple executives exist, return the highest executive responsible for the company.
-11. Never rewrite unknown values.
-12. Always distinguish between: Headquarters, Registered Office, Branch Office, and Manufacturing Plant.
-13. If revenue, employee count, valuation, funding, or profit is unavailable, return: "Not Publicly Available".
-14. Do not invent social media links.
-15. If the company has no website, return exactly: "No Official Website Found".
-16. If information cannot be verified, explicitly mention in your reasoning that it could not be confirmed.
-17. If no trustworthy information exists, lower the confidence score instead of guessing.
+2. If exact figures for revenue, market cap, or other financials are unavailable, provide a realistic estimate or industry average, clearly marking it with '(Est.)'.
+3. Do NOT simply return "Not Publicly Available" for financial metrics. Use estimated data based on similar publicly traded companies if necessary.
+4. If multiple sources disagree, prefer: Official company website, Government/business registry, Official LinkedIn page, Stock exchange filings, Company press releases, Trusted business databases.
+5. Keep company names exactly as provided.
+6. If the company is private and limited information exists, report verified facts alongside your best estimates marked with '(Est.)'.
+7. Recognize different executive titles (e.g., CEO, Managing Director, Founder, President). Return whichever title actually exists. Never force "CEO" if the company does not have one.
+8. If multiple executives exist, return the highest executive responsible for the company.
+9. Always distinguish between: Headquarters, Registered Office, Branch Office, and Manufacturing Plant.
+10. Do not invent social media links. If unknown, use 'N/A'.
+11. If the company has no website, return exactly: "No Official Website Found".
+12. If information cannot be verified, explicitly mention in your reasoning that it could not be confirmed.
 
 Conduct a thorough, data-driven analysis covering:
 
 1. **Company Overview & Profile**: Full official name, ticker symbol (if public), sector, founding year, headquarters (distinguishing office types), highest executive (with correct title), approximate employee count, official website, and official social media.
 
-2. **Financial Profile**: Figures for market cap, latest annual revenue, YoY revenue growth, net profit margin, P/E ratio, debt-to-equity ratio, dividend yield. Strictly use "Not Publicly Available" for any missing metric.
+2. **Financial Profile**: Figures for market cap, latest annual revenue, YoY revenue growth, net profit margin, P/E ratio, debt-to-equity ratio, dividend yield. Provide realistic estimates with '(Est.)' if exact numbers are hidden.
 
 3. **Investment Scorecard** — score each dimension from 0-10:
    - growth, moat, financials, management, valuation, esg.
