@@ -1,9 +1,9 @@
 /* General Sans from Fontshare — bold geometric sans for Swiss brutalist look */
 @import url("https://api.fontshare.com/v2/css?f[]=general-sans@200,300,400,500,600,700,800&display=swap");
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 html,
 body,

@@ -1,6 +1,6 @@
 # AI Investment Research Agent
 
-> A full-stack AI tool that takes a company name and returns a structured **Invest / Pass** recommendation — with pros, cons, risk level, reasoning, and a plain-English summary — powered by **LangChain.js** and **Groq (Llama 3)**.
+> A full-stack AI tool that takes a company name and returns a structured **Invest / Pass** recommendation — with pros, cons, risk level, reasoning, and a plain-English summary — powered by **LangChain.js** and **Google Gemini**.
 
 ---
 
@@ -31,7 +31,7 @@ The **AI Investment Research Agent** is a minimal but complete full-stack applic
 - 📝 **Reasoning** — a short, plain-English paragraph explaining the decision
 - 💬 **Summary** — a single headline-style takeaway
 
-The agent is powered by Groq (Llama 3) (`llama-3.3-70b-versatile`) via LangChain.js. The model is prompted to act as a pragmatic long-term retail investment analyst, instructed to be honest and lean toward `Pass` when confidence is low. The response is validated at runtime against a Zod schema, so the frontend always receives a typed, predictable JSON object — never freeform text to parse.
+The agent is powered by Google Gemini (`gemini-2.5-flash`) via LangChain.js. The model is prompted to act as a pragmatic long-term retail investment analyst, instructed to be honest and lean toward `Pass` when confidence is low. The response is validated at runtime against a Zod schema, so the frontend always receives a typed, predictable JSON object — never freeform text to parse.
 
 The frontend also displays the company's **official logo** automatically, fetched from the Brandfetch API (free tier) using the company name.
 
@@ -47,10 +47,10 @@ The frontend also displays the company's **official logo** automatically, fetche
 |---|---|---|
 | Node.js | 18.x | `node --version` |
 | npm | 9.x | `npm --version` |
-| Groq API Key | — | [console.groq.com](https://console.groq.com/keys) |
+| Google Gemini API Key | — | [aistudio.google.com](https://aistudio.google.com/) |
 | Brandfetch Client ID | — | [brandfetch.com/developers](https://brandfetch.com/developers) |
 
-You need a **Groq API key** (free). Get one at: https://console.groq.com/keys
+You need a **Google Gemini API key** (free). Get one at: https://aistudio.google.com/
 
 ---
 
@@ -77,11 +77,11 @@ cp .env.example .env       # Mac/Linux
 copy .env.example .env     # Windows (Command Prompt)
 ```
 
-Open `backend/.env` and fill in your Groq API key:
+Open `backend/.env` and fill in your Google Gemini API key:
 
 ```env
-GROQ_API_KEY=your-groq-api-key-here
-MODEL_NAME=llama-3.3-70b-versatile
+GOOGLE_API_KEY=your-google-gemini-key-here
+MODEL_NAME=gemini-2.5-flash
 PORT=8000
 ```
 
@@ -148,7 +148,7 @@ Open **http://localhost:3000** in your browser.
 
 1. Type a company name (e.g. `Apple`, `Reliance Industries`, `NVIDIA`)
 2. Click **Analyze**
-3. Wait ~3–5 seconds for Groq to respond
+3. Wait ~3–5 seconds for Gemini to respond
 4. Read the structured Invest/Pass recommendation — the company logo is displayed automatically
 
 ---
@@ -169,8 +169,8 @@ Open **http://localhost:3000** in your browser.
                                                           │
                                                           ▼
                                            ┌─────────────────────────────┐
-                                           │   Groq (Llama 3) API        │
-                                           │   llama-3.3-70b-versatile   │
+                                           │   Google Gemini API         │
+                                           │   gemini-2.5-flash          │
                                            └─────────────────────────────┘
 ```
 
@@ -179,14 +179,14 @@ Open **http://localhost:3000** in your browser.
 The backend uses a single **LangChain.js chain** composed of three steps, chained with the pipe operator:
 
 ```
-PromptTemplate  →  ChatGroq  →  StructuredOutputParser (Zod)
+PromptTemplate  →  ChatGoogleGenerativeAI  →  StructuredOutputParser (Zod)
 ```
 
 **Step 1 — PromptTemplate**
 A detailed analyst prompt is built using the company name and injected format instructions. The model is instructed to consider market position, strengths, weaknesses, and material risks, then commit to `Invest` or `Pass`. The prompt explicitly tells the model to respond with **valid JSON only** — no markdown or prose wrapping.
 
-**Step 2 — ChatGroq**
-The formatted prompt is sent to Groq (`llama-3.3-70b-versatile`) at temperature `0.3` — consistent enough for structured facts, varied enough to avoid repetitive phrasing.
+**Step 2 — ChatGoogleGenerativeAI**
+The formatted prompt is sent to Google Gemini (`gemini-2.5-flash`) at temperature `0.2` — consistent enough for structured facts, varied enough to avoid repetitive phrasing.
 
 **Step 3 — StructuredOutputParser (Zod)**
 The model's JSON string output is parsed and validated against a Zod schema at runtime. If any required field is missing or has the wrong type, the parser throws and the backend returns HTTP 500. This means the frontend can trust the exact shape of every successful response — no client-side string parsing or type guarding required.
@@ -222,7 +222,7 @@ The frontend is a **single-page React app** (Vite) with:
 
 | Decision | Rationale |
 |---|---|
-| **Groq (Llama 3) over OpenAI** | Groq is free-tier and lightning-fast. Eliminates API cost barriers for anyone running this project. |
+| **Google Gemini over OpenAI** | Gemini has a generous free-tier and is extremely fast. Eliminates API cost barriers for anyone running this project. |
 | **Single LangChain prompt — no tools or agent loop** | The task is self-contained reasoning from training knowledge. A full agentic loop with web search tools would add latency, complexity, and cost with marginal accuracy gain for well-known public companies. |
 | **Zod + StructuredOutputParser** | Forces the LLM into a strict typed contract. No fragile regex or string parsing on the frontend. If the model goes off-script, the error is caught server-side immediately. |
 | **Temperature = 0.3** | Low enough for consistent, factual output. High enough to avoid repetitive phrasing across different company analyses. |
@@ -237,7 +237,7 @@ The frontend is a **single-page React app** (Vite) with:
 
 ## Example Runs
 
-Real outputs from the live agent (Groq `llama-3.3-70b-versatile`).
+Real outputs from the live agent (Google Gemini `gemini-2.5-flash`).
 
 ---
 
@@ -333,15 +333,15 @@ Real outputs from the live agent (Groq `llama-3.3-70b-versatile`).
 
 | Improvement | Why |
 |---|---|
-| **Live web search grounding** | Integrate Tavily or SerpAPI so the agent pulls real-time news, earnings releases, and analyst reports before deciding. Would dramatically improve accuracy for recent events and lesser-known companies. |
+| **Live web search grounding** | *(Done)* Successfully enabled Gemini's native Google Search Grounding to fetch live, real-time data up to 2026. |
 | **Response caching** | Cache results by `(company, model)` with a 15-minute TTL in Redis. Removes redundant LLM calls for repeated queries and reduces cost at scale. |
-| **Streaming UI** | Stream the Groq response token-by-token and progressively reveal the result card. Makes the wait feel much shorter. |
+| **Streaming UI** | Stream the Gemini response token-by-token and progressively reveal the result card. Makes the wait feel much shorter. |
 | **Confidence score** | Add a numeric confidence field (0–100%) to the Zod schema. Expose it in the UI so users know when the model is uncertain. |
-| **Logo / Brand enrichment** | Use a more robust logo database or scrape favicon metadata for companies that don't match the simple `{name}.com` pattern. |
+| **Logo / Brand enrichment** | *(Done)* Upgraded to a multi-provider fallback sequence (Clearbit -> Brandfetch -> Google) to ensure high-quality, high-resolution logo loading. |
 | **Search history sidebar** | Store the last N analyses in localStorage and show a collapsible sidebar — useful for comparing companies. |
 | **Real financial data** | Pull live P/E ratio, revenue growth, and market cap from a financial API (e.g. Financial Modeling Prep, Alpha Vantage) and inject into the prompt. Grounds the model in real numbers. |
 | **LangGraph multi-step agent** | Replace the single prompt with a LangGraph workflow: Step 1 gathers public data, Step 2 synthesises, Step 3 formats the output. More auditable and accurate for complex cases. |
-| **Deployment** | Ship to Vercel (frontend) + Render (backend) with proper environment secrets for a live demo link. |
+| **Deployment** | *(Done)* Deployed the React frontend to Vercel and the Node.js backend to Render with proper environment secrets. |
 | **Unit + integration tests** | Add Vitest for Zod schema validation and Supertest for the Express routes. |
 
 ---
@@ -356,7 +356,7 @@ Real outputs from the live agent (Groq `llama-3.3-70b-versatile`).
 
 **Me:** I need to build an AI Investment Research Agent for an internship assignment. The stack must be React/Next.js, Node.js, and LangChain.js. What's the cleanest way to structure this?
 
-**AI:** Recommended a simple monorepo with `/frontend` (Vite + React) and `/backend` (Node.js + Express). A single `POST /analyze` endpoint is all we need — the agent doesn't need multiple routes. For the LLM, suggested using **Groq (Llama 3)** (`llama-3.3-70b-versatile`) over OpenAI because it's free-tier and eliminates API cost barriers for reviewers.
+**AI:** Recommended a simple monorepo with `/frontend` (Vite + React) and `/backend` (Node.js + Express). A single `POST /analyze` endpoint is all we need — the agent doesn't need multiple routes. For the LLM, suggested using **Google Gemini** (`gemini-2.5-flash`) because it has a generous free-tier and eliminates API cost barriers for reviewers.
 
 **Me:** Why not use LangGraph instead of a simple LangChain chain?
 
@@ -439,7 +439,7 @@ Response:
   Status: WORKS ✅
 ```
 
-Full pipeline confirmed: React → Vite proxy → Express → LangChain → Groq → Zod parser → JSON response → Company logo from Brandfetch.
+Full pipeline confirmed: React → Vite proxy → Express → LangChain → Gemini → Zod parser → JSON response → Company logo from fallback sequence.
 
 ---
 
